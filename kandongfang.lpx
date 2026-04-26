@@ -1,0 +1,19 @@
+#!name = 看东方净化去广告
+#!desc = 移除看东方APP广告和多余功能
+#!author = 
+#!homepage = 
+#!icon = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Kankan.png
+#!date = 2025-01-20
+
+[Script]
+# 移除看东方我的页面广告banner
+http-response ^https:\/\/bp-api\.bestv\.cn\/cms\/api\/advertise\/project\/userCenter script-path=https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/jq/jq_response.js, requires-body=true, timeout=60, tag=移除我的页面广告, argument="jq_script=.dt = []"
+
+# 移除首页推广banner
+http-response ^https:\/\/bp-api\.bestv\.cn\/cms\/api\/audit\/home\/v4 script-path=https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/jq/jq_response.js, requires-body=true, timeout=60, tag=移除首页推广, argument="jq_script=.dt |= map(select(.styleString | IN(\"右侧金刚位\",\"首页头图\",\"智能体\") | not))"
+
+# 移除底部千V、商城tab
+http-response ^https://bp-api\.bestv\.cn/cms/api/free/isGreyModel$ script-path=https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/jq/jq_response.js, requires-body=true, timeout=60, tag=移除底部Tab, argument="jq_script=.dt.homeAreaButton |= (fromjson | .subscrip = \"0\" | .shop = \"0\" | tojson)"
+
+[MITM]
+hostname = bp-api.bestv.cn
