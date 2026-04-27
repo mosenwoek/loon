@@ -1,0 +1,15 @@
+#!name=Kelee One 资源修正
+#!desc=自动修改 kelee.one 资源的 Content-Type 和 User-Agent，确保脚本和配置能被正确识别。
+#!author=Kelee
+#!icon=https://raw.githubusercontent.com/luestr/IconCenter/master/Asset/Kelee.png
+#!date=2023-10-27 12:00:00
+
+[Rewrite]
+# 修改请求头：User-Agent
+^https:\/\/([0-9a-z]+\.)?kelee\.one[^\s]*\.(js|sgmodule|conf|lcf|json|plugin|lpx)$ header-replace User-Agent "script-hub/1.0.0"
+
+# 修改响应头：Content-Type
+^https:\/\/([0-9a-z]+\.)?kelee\.one[^\s]*\.(js|sgmodule|conf|lcf|json|plugin|lpx)$ response-header-replace Content-Type "text/plain;charset=utf-8"
+
+[MITM]
+hostname = kelee.one, *.kelee.one
