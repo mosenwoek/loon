@@ -1,63 +1,65 @@
-// 黔东南油价 - Loon（爬取 qiyoujiage，优先凯里）
-// 若凯里页无效会自动回退贵州省页
+// 参数：在 Loon 任务「参数」里填省份，如：贵州
+// 不填则默认贵州
 
-const urls = [
-  "http://m.qiyoujiage.com/kaili.shtml",
-  "http://m.qiyoujiage.com/guizhou.shtml"
+let provname;
+if (typeof $argument !== "undefined" && $argument && String($argument).trim() !== "") {
+  provname = String($argument).trim();
+} else {
+  provname = "贵州";
+}
+
+// 去掉可能误写的「省」
+provname = provname.replace(/省$/, "");
+
+const encoded = encodeURIComponent(provname);
+const apiUrls = [
+  `https://apis.tianapi.com/oilprice/index?key=231de491563c35731436829ac52aad43&prov=${encoded}`,
+  `https://apis.tianapi.com/oilprice/index?key=a2bc7a0e01be908881ff752677cf94b7&prov=${encoded}`,
+  `https://apis.tianapi.com/oilprice/index?key=1bcc67c0114bc39a8818c8be12c2c9ac&prov=${encoded}`,
+  `https://apis.tianapi.com/oilprice/index?key=3c5ee42145c852de4147264f25b858dc&prov=${encoded}`,
+  `https://apis.tianapi.com/oilprice/index?key=d718b0f7c2b6d71cb3a9814e90bf847f&prov=${encoded}`
 ];
-let idx = 0;
+let i = 0;
 
-function next() {
-  if (idx >= urls.length) {
-    notify("黔东南油价", "查询失败", "页面解析失败，请稍后再试");
+function go() {
+  if (i >= apiUrls.length) {
+    notify("油价查询", "全部接口失败", "请稍后再试");
     $done();
     return;
   }
-  const url = urls[idx++];
-  const req = {
-    url,
-    headers: {
-      "referer": "http://m.qiyoujiage.com/",
-      "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15"
-    }
-  };
-
+  const req = { url: apiUrls[i++] };
   if (typeof $httpClient !== "undefined") {
-    $httpClient.get(req, (err, resp, body) => {
-      if (err || !body) return next();
-      parse(body, url);
-    });
+    $httpClient.get(req, (e, r, d) => (e ? go() : handle(d)));
   } else if (typeof $task !== "undefined") {
-    $task.fetch(req).then(r => parse(r.body, url), () => next());
+    $task.fetch(req).then(r => handle(r.body), () => go());
   } else {
     $done();
   }
 }
 
-function parse(html, url) {
-  const re = /<dl>[\s\S]*?<dt>([^<]*油)<\/dt>[\s\S]*?<dd>([\d.]+)\(元\)<\/dd>/gi;
-  const prices = [];
-  let m;
-  while ((m = re.exec(html)) !== null) {
-    prices.push({ name: m[1].trim(), value: m[2] });
+function handle(data) {
+  let obj;
+  try {
+    obj = JSON.parse(data);
+  } catch (e) {
+    go();
+    return;
   }
-
-  if (prices.length < 4) {
-    next();
+  if (obj.code !== 200) {
+    go();
     return;
   }
 
-  // 尽量按 92/95/98/0 排序展示
-  const line = (n) => {
-    const p = prices.find(x => x.name.includes(n));
-    return p ? `⛽️${p.name}: ¥${p.value}` : "";
-  };
-  const content = [line("92"), line("95"), line("98"), line("0")].filter(Boolean).join("\n");
-  const title = "贵州黔东南油价";
-  const sub = "数据来源：油价网（请与三价区核对）";
+  const r = obj.result;
+  const content =
+    `⛽️92号汽油: ¥${r.p92}\n` +
+    `⛽️95号汽油: ¥${r.p95}\n` +
+    `⛽️98号汽油: ¥${r.p98}\n` +
+    `⛽️0号柴油: ¥${r.p0}`;
 
-  console.log(title + "\n" + content);
-  notify(title, sub, content);
+  const title = r.prov + "油价提醒";
+  console.log(title + "\n" + r.time + "\n" + content);
+  notify(title, r.time, content);
   $done();
 }
 
@@ -66,4 +68,4 @@ function notify(t, s, b) {
   else if (typeof $notify !== "undefined") $notify(t, s, b);
 }
 
-next();
+go();
