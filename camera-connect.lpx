@@ -7,7 +7,7 @@
 
 rewrite_local
 
-^https?://traditional-opera.meappstore.top/camera/api/users/iosUserLogin url script-response-body https://raw.githubusercontent.com/你的用户名/你的仓库名/main/CameraConnect.js
+^https?://traditional-opera.meappstore.top/camera/api/users/iosUserLogin url script-response-body https://raw.githubusercontent.com/mosenwoek/loon/main/CameraConnect.js
 
 [MITM]
 hostname = .traditional-opera.meappstore.top
